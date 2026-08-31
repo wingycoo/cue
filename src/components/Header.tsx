@@ -11,6 +11,7 @@ import {
   Bookmark,
 } from 'lucide-react';
 import type { UserProfile, SyncStatus } from '../types';
+import { requestNotificationPermission, updateAppBadge } from '../services/badge';
 
 interface HeaderProps {
   userProfile?: UserProfile;
@@ -35,6 +36,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenGuide,
   onSyncNow,
 }) => {
+  const handleBadgeClick = async () => {
+    const granted = await requestNotificationPermission();
+    await updateAppBadge(notesCount);
+    if (!granted) {
+      alert('PWA 앱 아이콘에 숫자를 표기하려면 브라우저 알림 권한을 [허용]으로 선택해 주세요.');
+    }
+  };
+
   const getSyncIcon = () => {
     switch (syncStatus.state) {
       case 'syncing':
@@ -72,7 +81,11 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="header-right">
         {/* PWA App Icon Badge count indicator */}
-        <div className="badge-pill" title="PWA 앱 아이콘 노트 알림 숫자">
+        <div
+          className="badge-pill cursor-pointer hover:opacity-80 transition"
+          onClick={handleBadgeClick}
+          title="클릭하여 PWA 앱 아이콘 알림 권한 활성화"
+        >
           <Bookmark size={13} />
           <span>{notesCount}개</span>
         </div>
@@ -89,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Guide button */}
         <button
+          type="button"
           className="glass-btn icon-only-mobile"
           onClick={onOpenGuide}
           title="GCP OAuth & GCS 버킷 가이드"
@@ -99,6 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Settings button */}
         <button
+          type="button"
           className="glass-btn icon-only-mobile"
           onClick={onOpenSettings}
           title="GCS 버킷 및 Client ID 설정"
