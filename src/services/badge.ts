@@ -22,13 +22,25 @@ export async function updateAppBadge(count: number): Promise<void> {
   try {
     if ('setAppBadge' in navigator) {
       if (count > 0) {
-        await navigator.setAppBadge(count);
+        await (navigator as any).setAppBadge(count);
       } else {
-        await navigator.clearAppBadge();
+        await (navigator as any).clearAppBadge();
       }
     }
   } catch (error) {
     console.warn('App Badge API update failed:', error);
+  }
+
+  // Also post message to Service Worker controller if available
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SET_BADGE',
+        count: count,
+      });
+    }
+  } catch (err) {
+    console.warn('SW postMessage badge failed:', err);
   }
 
   // Update document title fallback for web browser tab
