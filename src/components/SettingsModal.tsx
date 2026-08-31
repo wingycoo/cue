@@ -33,12 +33,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-            <Database size={20} className="text-indigo-400" />
+        <div className="modal-header">
+          <div className="modal-title">
+            <Database size={20} className="text-indigo-400 shrink-0" />
             <span>GCS & 구글 로그인 설정</span>
-          </h2>
-          <button className="icon-btn" onClick={onClose}>
+          </div>
+          <button type="button" className="icon-btn shrink-0" onClick={onClose} aria-label="닫기">
             <X size={18} />
           </button>
         </div>

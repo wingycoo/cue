@@ -33,12 +33,12 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-panel max-w-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-            <ShieldCheck size={20} className="text-emerald-400" />
+        <div className="modal-header">
+          <div className="modal-title">
+            <ShieldCheck size={20} className="text-emerald-400 shrink-0" />
             <span>Google Cloud (GCS & OAuth) 연동 안내</span>
-          </h2>
-          <button className="icon-btn" onClick={onClose}>
+          </div>
+          <button type="button" className="icon-btn shrink-0" onClick={onClose} aria-label="닫기">
             <X size={18} />
           </button>
         </div>
@@ -80,6 +80,7 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
             </p>
             <div className="relative bg-slate-950 p-3 rounded-lg border border-white/10 font-mono text-xs text-slate-300">
               <button
+                type="button"
                 className="glass-btn text-xs absolute top-2 right-2 py-1 px-2"
                 onClick={copyCors}
               >
@@ -109,7 +110,7 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-white/10 mt-6">
-          <button className="glass-btn btn-primary" onClick={onClose}>
+          <button type="button" className="glass-btn btn-primary" onClick={onClose}>
             확인 및 닫기
           </button>
         </div>

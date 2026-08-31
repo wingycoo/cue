@@ -116,8 +116,8 @@ export const Editor: React.FC<EditorProps> = ({
       <div className="editor-workspace empty-state">
         {onBackToList && (
           <button className="glass-btn mobile-back-btn mb-4" onClick={onBackToList}>
-            <ChevronLeft size={18} />
-            <span>목록으로 돌아가기</span>
+            <ChevronLeft size={16} />
+            <span>목록</span>
           </button>
         )}
         <div className="p-6 rounded-full bg-indigo-500/10 text-indigo-400 mb-2">
@@ -146,26 +146,29 @@ export const Editor: React.FC<EditorProps> = ({
 
   return (
     <div className="editor-workspace">
-      {/* Editor Header: Back Button (Mobile) + Title Input + Actions */}
+      {/* Editor Header: Back Button + Title Input + Action Buttons Row */}
       <div className="editor-header">
-        {onBackToList && (
-          <button
-            className="glass-btn mobile-back-btn"
-            onClick={onBackToList}
-            title="노트 목록으로 돌아가기"
-          >
-            <ChevronLeft size={18} />
-            <span>목록</span>
-          </button>
-        )}
-        <input
-          type="text"
-          className="title-input"
-          placeholder="노트 제목 입력..."
-          value={note.title}
-          onChange={(e) => onUpdateNote({ id: note.id, title: e.target.value })}
-        />
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="editor-header-left">
+          {onBackToList && (
+            <button
+              className="glass-btn mobile-back-btn"
+              onClick={onBackToList}
+              title="노트 목록으로 돌아가기"
+            >
+              <ChevronLeft size={16} />
+              <span>목록</span>
+            </button>
+          )}
+          <input
+            type="text"
+            className="title-input"
+            placeholder="노트 제목 입력..."
+            value={note.title}
+            onChange={(e) => onUpdateNote({ id: note.id, title: e.target.value })}
+          />
+        </div>
+
+        <div className="editor-header-actions">
           <button
             className={`glass-btn ${note.pinned ? 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' : ''}`}
             onClick={() => onTogglePin(note.id)}
@@ -188,6 +191,7 @@ export const Editor: React.FC<EditorProps> = ({
       {editor && (
         <div className="editor-toolbar">
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('bold') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleBold().run()}
             title="굵게"
@@ -195,6 +199,7 @@ export const Editor: React.FC<EditorProps> = ({
             <Bold size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('italic') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleItalic().run()}
             title="기울임"
@@ -202,6 +207,7 @@ export const Editor: React.FC<EditorProps> = ({
             <Italic size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('strike') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleStrike().run()}
             title="취소선"
@@ -209,6 +215,7 @@ export const Editor: React.FC<EditorProps> = ({
             <Strikethrough size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('code') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleCode().run()}
             title="인라인 코드"
@@ -219,6 +226,7 @@ export const Editor: React.FC<EditorProps> = ({
           <div className="toolbar-divider" />
 
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('heading', { level: 1 }) ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             title="제목 1"
@@ -226,6 +234,7 @@ export const Editor: React.FC<EditorProps> = ({
             <Heading1 size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('heading', { level: 2 }) ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             title="제목 2"
@@ -236,6 +245,7 @@ export const Editor: React.FC<EditorProps> = ({
           <div className="toolbar-divider" />
 
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('bulletList') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             title="글머리 기호 목록"
@@ -243,6 +253,7 @@ export const Editor: React.FC<EditorProps> = ({
             <List size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('orderedList') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             title="번호 매기기 목록"
@@ -250,6 +261,7 @@ export const Editor: React.FC<EditorProps> = ({
             <ListOrdered size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('codeBlock') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             title="코드 블록"
@@ -257,6 +269,7 @@ export const Editor: React.FC<EditorProps> = ({
             <FileCode size={16} />
           </button>
           <button
+            type="button"
             className={`icon-btn ${editor.isActive('blockquote') ? 'text-indigo-400 bg-white/10' : ''}`}
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             title="인용구"
@@ -269,12 +282,13 @@ export const Editor: React.FC<EditorProps> = ({
           <input
             type="file"
             ref={fileInputRef}
-            className="hidden"
+            style={{ display: 'none' }}
             accept="image/*"
             onChange={handleImageFileSelect}
           />
           <button
-            className="icon-btn text-indigo-400 hover:bg-indigo-500/20"
+            type="button"
+            className="icon-btn text-indigo-400 hover:bg-indigo-500/20 shrink-0"
             onClick={() => fileInputRef.current?.click()}
             title="이미지 파일 첨부"
           >
