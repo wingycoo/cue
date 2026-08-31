@@ -162,8 +162,8 @@ export function useNotes() {
   const createNewNote = async () => {
     const newNote: Note = {
       id: `note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      title: '새 업무 노트',
-      content: '<p>자유롭게 내용을 작성하거나 이미지를 붙여넣으세요...</p>',
+      title: '',
+      content: '',
       images: [],
       pinned: false,
       createdAt: Date.now(),

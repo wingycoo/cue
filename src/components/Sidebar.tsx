@@ -43,7 +43,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const renderCard = (note: Note) => {
     const isActive = note.id === selectedNoteId;
-    const snippet = stripHtml(note.content);
+    const plainText = stripHtml(note.content).trim();
+    
+    // First line or snippet as main card title
+    const firstLine = plainText.split('\n')[0] || '';
+    const displayTitle = firstLine ? (firstLine.length > 28 ? firstLine.substring(0, 28) + '...' : firstLine) : '새 업무 노트';
+    const snippetText = plainText ? plainText : '작성된 내용이 없습니다.';
 
     return (
       <div
@@ -52,14 +57,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectNote(note.id)}
       >
         <div className="note-card-title">
-          <span>{note.title || '제목 없는 노트'}</span>
-          {note.pinned && <Pin size={13} className="text-indigo-400 fill-indigo-400/20" />}
+          <span className="truncate">{displayTitle}</span>
+          {note.pinned && <Pin size={13} className="text-indigo-400 fill-indigo-400/20 shrink-0" />}
         </div>
-        <div className="note-card-snippet">{snippet || '내용이 없습니다.'}</div>
+        <div className="note-card-snippet">{snippetText}</div>
         <div className="note-card-meta">
           <span>{formatDate(note.updatedAt)}</span>
           <div className="card-actions" onClick={(e) => e.stopPropagation()}>
             <button
+              type="button"
               className={`icon-btn ${note.pinned ? 'text-indigo-400' : ''}`}
               onClick={() => onTogglePin(note.id)}
               title={note.pinned ? '고정 해제' : '상단 고정'}
@@ -67,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Pin size={13} />
             </button>
             <button
+              type="button"
               className="icon-btn danger"
               onClick={() => onDeleteNote(note.id)}
               title="노트 삭제"
@@ -82,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="app-sidebar">
       <div className="sidebar-header">
-        <button className="glass-btn btn-primary w-full justify-center" onClick={onCreateNote}>
+        <button type="button" className="glass-btn btn-primary w-full justify-center" onClick={onCreateNote}>
           <Plus size={18} />
           <span>새 노트 작성</span>
         </button>
@@ -91,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <input
             type="text"
             className="glass-input pl-9"
-            placeholder="노트 검색..."
+            placeholder="노트 본문 검색..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />

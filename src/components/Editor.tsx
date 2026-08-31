@@ -144,13 +144,24 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <div className="editor-workspace">
-      {/* Editor Header: Back Button + Title Input + Action Buttons Row */}
+      {/* Editor Header: Back Button + Date Info + Actions */}
       <div className="editor-header">
         <div className="editor-header-left">
           {onBackToList && (
             <button
+              type="button"
               className="glass-btn mobile-back-btn"
               onClick={onBackToList}
               title="노트 목록으로 돌아가기"
@@ -159,17 +170,14 @@ export const Editor: React.FC<EditorProps> = ({
               <span>목록</span>
             </button>
           )}
-          <input
-            type="text"
-            className="title-input"
-            placeholder="노트 제목 입력..."
-            value={note.title}
-            onChange={(e) => onUpdateNote({ id: note.id, title: e.target.value })}
-          />
+          <span className="text-xs text-slate-400 font-medium">
+            마지막 수정: {formatDate(note.updatedAt)}
+          </span>
         </div>
 
         <div className="editor-header-actions">
           <button
+            type="button"
             className={`glass-btn ${note.pinned ? 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' : ''}`}
             onClick={() => onTogglePin(note.id)}
             title={note.pinned ? '고정 해제' : '상단 고정'}
@@ -178,6 +186,7 @@ export const Editor: React.FC<EditorProps> = ({
             <span className="btn-label-desktop">{note.pinned ? '고정됨' : '고정'}</span>
           </button>
           <button
+            type="button"
             className="glass-btn hover:text-rose-400 hover:border-rose-500/40"
             onClick={() => onDeleteNote(note.id)}
             title="노트 삭제"
