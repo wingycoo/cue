@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Note, AppSettings, UserProfile, SyncStatus } from '../types';
 import {
   getAllLocalNotes,
@@ -37,6 +37,9 @@ export function useNotes() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Debounce timers ref for unthrottled GCS uploads
+  const uploadTimers = useRef<{ [noteId: string]: number }>({});
+
   // 1. Initial Load from Local Storage & IndexedDB
   useEffect(() => {
     (async () => {
@@ -69,7 +72,7 @@ export function useNotes() {
         (_err) => {
           setSyncStatus({
             state: 'error',
-            errorMessage: 'Google login failed or scope denied.',
+            errorMessage: 'Google 로그인 또는 권한 오류',
           });
         }
       ).catch(console.error);
@@ -81,7 +84,7 @@ export function useNotes() {
     async (tokenToUse?: string) => {
       const token = tokenToUse || accessToken;
       if (!token || !settings.gcsBucket) {
-        setSyncStatus({ state: 'offline', errorMessage: 'GCS or Login missing' });
+        setSyncStatus({ state: 'offline', errorMessage: 'GCS 설정 필요' });
         return;
       }
 
@@ -93,10 +96,8 @@ export function useNotes() {
 
         // Step A: Fetch remote notes from GCS
         const remoteNotes = await listNotesFromGCS(bucket, token);
-        const remoteMap = new Map(remoteNotes.map((n) => [n.id, n]));
 
         // Step B: Merge local & remote
-        const updatedList: Note[] = [];
         const processMap = new Map<string, Note>();
 
         for (const localNote of currentLocal) {
@@ -106,30 +107,19 @@ export function useNotes() {
         for (const remoteNote of remoteNotes) {
           const localNote = processMap.get(remoteNote.id);
           if (!localNote) {
-            // New from remote
             await saveLocalNote(remoteNote);
             processMap.set(remoteNote.id, remoteNote);
           } else {
-            // Conflict resolution by updatedAt timestamp
             if (remoteNote.updatedAt > localNote.updatedAt) {
               await saveLocalNote(remoteNote);
               processMap.set(remoteNote.id, remoteNote);
             } else if (localNote.updatedAt > remoteNote.updatedAt) {
-              // Upload local newer version to GCS
               await uploadNoteToGCS(bucket, token, localNote);
             }
           }
         }
 
-        // Step C: Push any local notes not on remote to GCS
-        for (const localNote of processMap.values()) {
-          if (!remoteMap.has(localNote.id)) {
-            await uploadNoteToGCS(bucket, token, localNote);
-          }
-          updatedList.push(localNote);
-        }
-
-        // Re-sort
+        const updatedList: Note[] = Array.from(processMap.values());
         updatedList.sort((a, b) => b.updatedAt - a.updatedAt);
         setNotes(updatedList);
         updateAppBadge(updatedList.length);
@@ -139,14 +129,14 @@ export function useNotes() {
         console.error('Sync Error:', err);
         setSyncStatus({
           state: 'error',
-          errorMessage: err?.message || 'Sync failed',
+          errorMessage: err?.message || 'GCS 동기화 실패',
         });
       }
     },
     [accessToken, settings.gcsBucket]
   );
 
-  // Auto Sync trigger on login or interval
+  // Auto Sync trigger on initial login
   useEffect(() => {
     if (accessToken && settings.gcsBucket) {
       performSync();
@@ -181,46 +171,72 @@ export function useNotes() {
     };
 
     await saveLocalNote(newNote);
-    const updated = [newNote, ...notes];
-    setNotes(updated);
+    setNotes((prev) => [newNote, ...prev]);
     setSelectedNoteId(newNote.id);
-    updateAppBadge(updated.length);
 
     if (accessToken && settings.gcsBucket) {
       uploadNoteToGCS(settings.gcsBucket, accessToken, newNote).catch(console.error);
     }
   };
 
-  const updateNote = async (updatedFields: Partial<Note> & { id: string }) => {
-    const target = notes.find((n) => n.id === updatedFields.id);
-    if (!target) return;
+  /**
+   * Debounced note updater (Updates local state & IndexedDB immediately, delays GCS network upload)
+   */
+  const updateNote = useCallback(
+    (updatedFields: Partial<Note> & { id: string }, immediateGCS = false) => {
+      setNotes((prevNotes) => {
+        const target = prevNotes.find((n) => n.id === updatedFields.id);
+        if (!target) return prevNotes;
 
-    const modifiedNote: Note = {
-      ...target,
-      ...updatedFields,
-      updatedAt: Date.now(),
-    };
+        const modifiedNote: Note = {
+          ...target,
+          ...updatedFields,
+          updatedAt: Date.now(),
+        };
 
-    await saveLocalNote(modifiedNote);
+        // 1. Instant local IndexedDB save (non-blocking)
+        saveLocalNote(modifiedNote).catch(console.error);
 
-    const newNotes = notes.map((n) => (n.id === modifiedNote.id ? modifiedNote : n));
-    setNotes(newNotes);
+        // 2. Debounced GCS network upload (1.2s delay after last keystroke)
+        if (accessToken && settings.gcsBucket) {
+          if (uploadTimers.current[modifiedNote.id]) {
+            window.clearTimeout(uploadTimers.current[modifiedNote.id]);
+          }
 
-    if (accessToken && settings.gcsBucket) {
-      uploadNoteToGCS(settings.gcsBucket, accessToken, modifiedNote).catch(
-        console.error
-      );
-    }
-  };
+          const runUpload = () => {
+            setSyncStatus({ state: 'syncing' });
+            uploadNoteToGCS(settings.gcsBucket, accessToken, modifiedNote)
+              .then(() => {
+                setSyncStatus({ state: 'synced', lastSyncedAt: Date.now() });
+              })
+              .catch((err) => {
+                console.error('GCS Upload Error:', err);
+                setSyncStatus({ state: 'error', errorMessage: 'GCS 저장 오류' });
+              });
+          };
+
+          if (immediateGCS) {
+            runUpload();
+          } else {
+            uploadTimers.current[modifiedNote.id] = window.setTimeout(runUpload, 1200);
+          }
+        }
+
+        return prevNotes.map((n) => (n.id === modifiedNote.id ? modifiedNote : n));
+      });
+    },
+    [accessToken, settings.gcsBucket]
+  );
 
   const deleteNote = async (id: string) => {
+    if (uploadTimers.current[id]) {
+      window.clearTimeout(uploadTimers.current[id]);
+    }
     await deleteLocalNote(id);
-    const remaining = notes.filter((n) => n.id !== id);
-    setNotes(remaining);
-    updateAppBadge(remaining.length);
+    setNotes((prev) => prev.filter((n) => n.id !== id));
 
     if (selectedNoteId === id) {
-      setSelectedNoteId(remaining.length > 0 ? remaining[0].id : null);
+      setSelectedNoteId(null);
     }
 
     if (accessToken && settings.gcsBucket) {
@@ -228,16 +244,15 @@ export function useNotes() {
     }
   };
 
-  const togglePin = async (id: string) => {
+  const togglePin = (id: string) => {
     const target = notes.find((n) => n.id === id);
     if (target) {
-      await updateNote({ id, pinned: !target.pinned });
+      updateNote({ id, pinned: !target.pinned }, true);
     }
   };
 
   const uploadImage = async (file: File | Blob) => {
     if (!accessToken || !settings.gcsBucket) {
-      // Return local Object URL fallback if offline
       return URL.createObjectURL(file);
     }
     const res = await uploadImageToGCS(settings.gcsBucket, accessToken, file);
