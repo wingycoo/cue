@@ -26,8 +26,8 @@ export function useNotes() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings>({
-    gcsBucket: '',
-    googleClientId: '',
+    gcsBucket: 'wingycoo-cue',
+    googleClientId: '387585564320-gadbr3nss1o91p9lrmjrnppqimrc6rje.apps.googleusercontent.com',
     autoSync: true,
   });
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(

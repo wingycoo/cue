@@ -78,8 +78,10 @@ export async function hardDeleteLocalNote(id: string): Promise<void> {
 // --- Settings Operations ---
 
 const DEFAULT_SETTINGS: AppSettings = {
-  gcsBucket: localStorage.getItem('cue_gcs_bucket') || '',
-  googleClientId: localStorage.getItem('cue_google_client_id') || '',
+  gcsBucket: localStorage.getItem('cue_gcs_bucket') || 'wingycoo-cue',
+  googleClientId:
+    localStorage.getItem('cue_google_client_id') ||
+    '387585564320-gadbr3nss1o91p9lrmjrnppqimrc6rje.apps.googleusercontent.com',
   autoSync: true,
 };
 
@@ -87,7 +89,11 @@ export async function getAppSettings(): Promise<AppSettings> {
   const db = await getDB();
   const settings = await db.get('settings', 'app_config');
   if (settings) {
-    return settings;
+    return {
+      gcsBucket: settings.gcsBucket || DEFAULT_SETTINGS.gcsBucket,
+      googleClientId: settings.googleClientId || DEFAULT_SETTINGS.googleClientId,
+      autoSync: settings.autoSync ?? true,
+    };
   }
   return DEFAULT_SETTINGS;
 }
