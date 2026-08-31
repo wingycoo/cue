@@ -53,7 +53,7 @@ export function App() {
   }, [selectedNote, mobileView]);
 
   return (
-    <div className="app-shell flex flex-col h-screen w-screen overflow-hidden bg-[#0b0f19]">
+    <div className="app-shell">
       <Header
         userProfile={userProfile}
         accessToken={accessToken}

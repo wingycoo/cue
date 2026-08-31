@@ -109,17 +109,18 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* User Auth Profile / Login Button */}
         {accessToken && userProfile ? (
-          <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+          <div className="user-profile-section">
             <img
               src={userProfile.picture}
               alt={userProfile.name}
-              className="w-7 h-7 rounded-full border border-white/20"
+              className="user-avatar"
               title={userProfile.email}
             />
             <button
-              className="glass-btn text-xs px-2 py-1 text-slate-300 hover:text-rose-400"
+              type="button"
+              className="glass-btn logout-btn"
               onClick={onLogout}
-              title="로그아웃"
+              title="구글 로그아웃"
             >
               <LogOut size={14} />
             </button>

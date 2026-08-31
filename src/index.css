@@ -54,6 +54,16 @@ body {
   flex-direction: column;
 }
 
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--bg-glass);
@@ -76,9 +86,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-direction: row; /* Strict horizontal row */
+  flex-direction: row;
   gap: 6px;
-  white-space: nowrap; /* Prevent vertical text wrapping */
+  white-space: nowrap;
   flex-shrink: 0;
   transition: var(--transition);
   touch-action: manipulation;
@@ -216,6 +226,40 @@ body {
   white-space: nowrap;
 }
 
+/* User Profile Avatar Section */
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  display: block;
+}
+
+.logout-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.logout-btn:hover {
+  color: var(--danger-color);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* Sidebar */
 .app-sidebar {
   width: 320px;
@@ -349,7 +393,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-direction: row; /* Strict horizontal row */
+  flex-direction: row;
   gap: 12px;
   width: 100%;
 }
@@ -365,7 +409,7 @@ body {
 .editor-header-actions {
   display: flex;
   align-items: center;
-  flex-direction: row; /* Strict horizontal side-by-side row */
+  flex-direction: row;
   gap: 8px;
   flex-shrink: 0;
 }
@@ -570,6 +614,11 @@ body {
 
   .status-pill {
     padding: 4px 8px;
+  }
+
+  .user-avatar {
+    width: 26px;
+    height: 26px;
   }
 
   /* Responsive View Switching on Mobile */
