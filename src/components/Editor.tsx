@@ -140,22 +140,27 @@ export const Editor: React.FC<EditorProps> = ({
   if (!isLoggedIn && !note) {
     return (
       <div className="editor-workspace empty-state">
-        <div className="p-8 rounded-3xl bg-indigo-500/10 border border-indigo-500/25 max-w-md mx-4 text-center shadow-2xl backdrop-blur-xl">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 mx-auto mb-4 flex items-center justify-center shadow-lg shadow-indigo-500/15">
-            <Lock size={32} />
+        <div className="login-hero-card glass-panel">
+          <div className="login-hero-icon">
+            <Lock size={30} />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Google 로그인 후 작성 가능</h2>
-          <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-            동기화 오류를 방지하고 안전한 GCS 클라우드 실시간 저장을 위해 Google 로그인 후 노트를 작성하실 수 있습니다.
+          <h2 className="login-hero-title">Google 로그인 후 시작하기</h2>
+          <p className="login-hero-desc">
+            노트가 Google Cloud Storage에 안전하게 보관되고 모든 기기에서 실시간으로 동기화됩니다.
           </p>
           <button
             type="button"
-            className="glass-btn btn-primary w-full justify-center py-3 text-base shadow-lg"
+            className="glass-btn btn-primary login-hero-btn"
             onClick={onLogin}
           >
             <LogIn size={18} />
             <span>Google 계정으로 로그인</span>
           </button>
+          <div className="login-hero-badges">
+            <span className="login-badge">☁️ GCS 개인 버킷 저장</span>
+            <span className="login-badge">⚡ 실시간 자동 동기화</span>
+            <span className="login-badge">📱 모바일 PWA 지원</span>
+          </div>
         </div>
       </div>
     );
@@ -171,11 +176,11 @@ export const Editor: React.FC<EditorProps> = ({
             <span>목록</span>
           </button>
         )}
-        <div className="p-6 rounded-full bg-indigo-500/10 text-indigo-400 mb-2">
-          <ImageIcon size={48} />
+        <div className="login-hero-icon">
+          <ImageIcon size={30} />
         </div>
-        <h2 className="text-xl font-semibold text-slate-200">선택된 노트가 없습니다</h2>
-        <p className="text-sm text-slate-400 max-w-sm">
+        <h2 className="login-hero-title">선택된 노트가 없습니다</h2>
+        <p className="login-hero-desc">
           목록에서 노트를 선택하거나 [새 노트 작성] 버튼을 클릭하여 작성을 시작하세요.
         </p>
       </div>
@@ -237,18 +242,18 @@ export const Editor: React.FC<EditorProps> = ({
     <div className="editor-workspace">
       {/* Read-only login banner if viewing note without login */}
       {!isLoggedIn && (
-        <div className="p-3 mx-4 mt-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 font-medium">
-            <Lock size={13} className="shrink-0" />
-            <span>읽기 전용 모드입니다. 노트를 편집하거나 새로 작성하려면 Google 로그인이 필요합니다.</span>
-          </span>
+        <div className="auth-notice-bar">
+          <div className="auth-notice-text">
+            <Lock size={14} className="shrink-0" />
+            <span>읽기 전용 모드입니다. 노트를 편집하려면 Google 로그인이 필요합니다.</span>
+          </div>
           <button
             type="button"
-            className="glass-btn btn-primary text-xs py-1 px-3 ml-2 shrink-0"
+            className="glass-btn btn-primary btn-sm shrink-0"
             onClick={onLogin}
           >
             <LogIn size={13} />
-            <span>로그인하기</span>
+            <span>로그인</span>
           </button>
         </div>
       )}
@@ -267,15 +272,26 @@ export const Editor: React.FC<EditorProps> = ({
               <span>목록</span>
             </button>
           )}
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="note-date-text">
             마지막 수정: {formatDate(note.updatedAt)}
           </span>
         </div>
 
         <div className="editor-header-actions">
+          {!isLoggedIn && (
+            <button
+              type="button"
+              className="glass-btn btn-primary btn-sm"
+              onClick={onLogin}
+              title="Google 로그인하여 편집"
+            >
+              <LogIn size={14} />
+              <span className="btn-label-desktop">로그인</span>
+            </button>
+          )}
           <button
             type="button"
-            className={`glass-btn ${copied ? 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' : ''}`}
+            className={`glass-btn ${copied ? 'btn-copied' : ''}`}
             onClick={handleCopyContent}
             title="노트 전체 텍스트 복사"
           >
@@ -284,7 +300,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`glass-btn ${note.pinned ? 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' : ''}`}
+            className={`glass-btn ${note.pinned ? 'btn-pinned' : ''}`}
             onClick={() => onTogglePin(note.id)}
             title={note.pinned ? '고정 해제' : '상단 고정'}
           >
@@ -293,7 +309,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className="glass-btn hover:text-rose-400 hover:border-rose-500/40"
+            className="glass-btn btn-delete"
             onClick={() => onDeleteNote(note.id)}
             title="노트 삭제"
           >
@@ -307,7 +323,7 @@ export const Editor: React.FC<EditorProps> = ({
         <div className="editor-toolbar">
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('bold') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('bold') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleBold().run()}
             title="굵게"
           >
@@ -315,7 +331,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('italic') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('italic') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleItalic().run()}
             title="기울임"
           >
@@ -323,7 +339,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('strike') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('strike') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleStrike().run()}
             title="취소선"
           >
@@ -331,7 +347,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('code') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('code') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleCode().run()}
             title="인라인 코드"
           >
@@ -342,7 +358,7 @@ export const Editor: React.FC<EditorProps> = ({
 
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('heading', { level: 1 }) ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('heading', { level: 1 }) ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             title="제목 1"
           >
@@ -350,7 +366,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('heading', { level: 2 }) ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('heading', { level: 2 }) ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             title="제목 2"
           >
@@ -361,7 +377,7 @@ export const Editor: React.FC<EditorProps> = ({
 
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('bulletList') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('bulletList') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             title="글머리 기호 목록"
           >
@@ -369,7 +385,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('orderedList') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('orderedList') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             title="번호 매기기 목록"
           >
@@ -377,7 +393,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('codeBlock') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('codeBlock') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             title="코드 블록"
           >
@@ -385,7 +401,7 @@ export const Editor: React.FC<EditorProps> = ({
           </button>
           <button
             type="button"
-            className={`icon-btn ${editor.isActive('blockquote') ? 'text-indigo-400 bg-white/10' : ''}`}
+            className={`icon-btn ${editor.isActive('blockquote') ? 'active' : ''}`}
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             title="인용구"
           >
@@ -403,7 +419,8 @@ export const Editor: React.FC<EditorProps> = ({
           />
           <button
             type="button"
-            className="icon-btn text-indigo-400 hover:bg-indigo-500/20 shrink-0"
+            className="icon-btn"
+            style={{ color: '#818cf8' }}
             onClick={() => fileInputRef.current?.click()}
             title="이미지 파일 첨부"
           >

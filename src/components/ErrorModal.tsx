@@ -24,10 +24,10 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content glass-panel max-w-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title text-rose-400">
-            <ShieldAlert size={22} className="text-rose-400 shrink-0" />
+          <div className="modal-title" style={{ color: '#fb7185' }}>
+            <ShieldAlert size={22} className="shrink-0" style={{ color: '#fb7185' }} />
             <span>{title}</span>
           </div>
           <button type="button" className="icon-btn shrink-0" onClick={onClose} aria-label="닫기">
@@ -35,17 +35,17 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
           </button>
         </div>
 
-        <div className="space-y-4 text-sm text-slate-300">
-          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-200 text-xs leading-relaxed whitespace-pre-line">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="error-box">
             {message}
           </div>
 
           {isPermissionError && (
-            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 space-y-2">
-              <h4 className="font-semibold text-white text-xs flex items-center gap-1.5">
+            <div className="help-box">
+              <h4 className="help-box-title">
                 💡 해결 방법 (체크박스 확인)
               </h4>
-              <ol className="list-decimal list-inside space-y-1 text-xs text-slate-300 leading-relaxed">
+              <ol className="help-box-list">
                 <li>
                   아래 <strong>[로그아웃 후 다시 로그인]</strong> 버튼을 클릭합니다.
                 </li>
@@ -58,13 +58,13 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10 mt-6">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', marginTop: '20px' }}>
           <button type="button" className="glass-btn" onClick={onClose}>
             닫기
           </button>
           <button
             type="button"
-            className="glass-btn text-slate-300 hover:text-rose-400"
+            className="glass-btn btn-delete"
             onClick={onLogout}
             title="로그아웃만 수행"
           >

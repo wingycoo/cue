@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Search, Pin, Trash2, FileText, Lock, LogIn } from 'lucide-react';
+import { Plus, Search, Pin, Trash2, FileText } from 'lucide-react';
 import type { Note } from '../types';
 
 interface SidebarProps {
@@ -109,10 +109,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           className="glass-btn btn-primary w-full justify-center"
           onClick={handleCreateClick}
-          title={isLoggedIn ? '새 노트 작성' : '구글 로그인 후 새 노트 작성'}
+          title="새 노트 작성"
         >
-          {isLoggedIn ? <Plus size={18} /> : <LogIn size={18} />}
-          <span>{isLoggedIn ? '새 노트 작성' : '로그인 후 작성하기'}</span>
+          <Plus size={18} />
+          <span>새 노트 작성</span>
         </button>
 
         <div className="relative">
@@ -128,20 +128,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
         </div>
-
-        {!isLoggedIn && (
-          <div
-            className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-300 flex items-center justify-between cursor-pointer hover:bg-indigo-500/20 transition"
-            onClick={onLogin}
-            title="클릭하여 구글 로그인"
-          >
-            <span className="flex items-center gap-1.5 font-medium">
-              <Lock size={13} />
-              <span>로그인 후 작성/동기화 가능</span>
-            </span>
-            <LogIn size={14} className="shrink-0 text-indigo-400" />
-          </div>
-        )}
       </div>
 
       <div className="note-list-scroll">

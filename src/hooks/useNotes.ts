@@ -49,7 +49,8 @@ export function useNotes() {
 
       const localNotes = await getAllLocalNotes();
       setNotes(localNotes);
-      if (localNotes.length > 0 && !selectedNoteId) {
+      const isAuth = getStoredAccessToken() !== null;
+      if (localNotes.length > 0 && !selectedNoteId && isAuth) {
         setSelectedNoteId(localNotes[0].id);
       }
       updateAppBadge(localNotes.length);
@@ -70,6 +71,12 @@ export function useNotes() {
           setAccessToken(token);
           if (user) setUserProfile(user);
           setErrorModalInfo(null);
+          setNotes((currentNotes) => {
+            if (currentNotes.length > 0 && !selectedNoteId) {
+              setSelectedNoteId(currentNotes[0].id);
+            }
+            return currentNotes;
+          });
         },
         (err) => {
           if (err?.type === 'SCOPE_MISSING') {

@@ -321,12 +321,19 @@ body {
   font-size: 0.95rem;
   color: var(--text-primary);
   margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .note-card-snippet {
@@ -576,6 +583,194 @@ body {
   padding: 30px;
 }
 
+/* Note Date Text in Editor Header */
+.note-date-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Glass button variants */
+.glass-btn.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  gap: 4px;
+}
+
+.glass-btn.btn-copied {
+  color: var(--success-color);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.glass-btn.btn-pinned {
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.glass-btn.btn-delete:hover {
+  color: var(--danger-color);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.icon-btn.active {
+  color: #a5b4fc;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Auth Notice Bar (Read-only notice inside editor) */
+.auth-notice-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 20px 0 20px;
+  padding: 10px 16px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-md);
+  color: #fef3c7;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+}
+
+.auth-notice-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+/* Login Hero Screen (When not logged in) */
+.login-hero-card {
+  max-width: 440px;
+  width: 100%;
+  margin: 0 16px;
+  padding: 36px 28px;
+  text-align: center;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px var(--accent-glow);
+  margin-bottom: 4px;
+}
+
+.login-hero-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.login-hero-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 6px;
+}
+
+.login-hero-btn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.login-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.login-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+/* Error Modal Boxes */
+.error-box {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fecdd3;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.help-box {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(19, 27, 46, 0.7);
+  border: 1px solid var(--border-color);
+  margin-top: 12px;
+}
+
+.help-box-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.help-box-list {
+  list-style: decimal inside;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* Guide Modal Code Boxes */
+.code-block-wrapper {
+  position: relative;
+  background: #020617;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  overflow-x: auto;
+}
+
+.code-inline {
+  color: #a5b4fc;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
 /* ====================================================
    MOBILE RESPONSIVE MEDIA QUERIES (max-width: 768px)
    ==================================================== */
@@ -652,6 +847,21 @@ body {
   .editor-header {
     padding: 10px 12px;
     gap: 8px;
+  }
+
+  .auth-notice-bar {
+    margin: 8px 10px 0 10px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    gap: 8px;
+  }
+
+  .login-hero-card {
+    padding: 26px 18px;
+  }
+
+  .login-hero-title {
+    font-size: 1.2rem;
   }
 
   .title-input {
