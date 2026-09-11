@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -18,6 +18,8 @@ import {
   FileCode,
   Quote,
   ChevronLeft,
+  Copy,
+  Check,
 } from 'lucide-react';
 import type { Note } from '../types';
 
@@ -39,6 +41,7 @@ export const Editor: React.FC<EditorProps> = ({
   onBackToList,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -154,6 +157,30 @@ export const Editor: React.FC<EditorProps> = ({
     });
   };
 
+  const handleCopyContent = async () => {
+    if (!note) return;
+    try {
+      let textToCopy = '';
+      if (editor) {
+        textToCopy = editor.getText();
+      }
+      if (!textToCopy && note.content) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = note.content;
+        tmp.querySelectorAll('p, div, h1, h2, h3, li, pre, blockquote, br').forEach((el) => {
+          el.after('\n');
+        });
+        textToCopy = (tmp.textContent || tmp.innerText || '').trim();
+      }
+
+      await navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy note text:', err);
+    }
+  };
+
   return (
     <div className="editor-workspace">
       {/* Editor Header: Back Button + Date Info + Actions */}
@@ -176,6 +203,15 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
 
         <div className="editor-header-actions">
+          <button
+            type="button"
+            className={`glass-btn ${copied ? 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' : ''}`}
+            onClick={handleCopyContent}
+            title="노트 전체 텍스트 복사"
+          >
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+            <span className="btn-label-desktop">{copied ? '복사됨' : '복사'}</span>
+          </button>
           <button
             type="button"
             className={`glass-btn ${note.pinned ? 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' : ''}`}
