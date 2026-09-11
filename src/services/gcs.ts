@@ -64,7 +64,14 @@ export async function listNotesFromGCS(
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`Failed to list GCS objects: ${res.status} ${errorText}`);
+    let errorDetail = '';
+    try {
+      const parsed = JSON.parse(errorText);
+      if (parsed?.error?.message === 'Insufficient Permission') {
+        errorDetail = '\n\n[권한 부족 안내]\n1. 구글 로그인 시 "Google Cloud Storage 데이터 확인/수정" 권한 체크박스를 선택했는지 확인해 주세요.\n2. GCP 콘솔에서 ' + bucket + ' 버킷에 현재 구글 계정의 권한(스토리지 객체 관리자)이 부여되어 있는지 확인해 주세요.';
+      }
+    } catch {}
+    throw new Error(`Failed to list GCS objects: ${res.status} ${errorText}${errorDetail}`);
   }
 
   const data = await res.json();

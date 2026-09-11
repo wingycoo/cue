@@ -14,6 +14,10 @@ let currentAccessToken: string | null = localStorage.getItem('cue_access_token')
 let tokenExpiresAt: number = Number(localStorage.getItem('cue_token_expires') || '0');
 
 export function getStoredAccessToken(): string | null {
+  const granted = localStorage.getItem('cue_granted_scopes');
+  if (granted && !granted.includes('devstorage') && !granted.includes('cloud-platform')) {
+    return null;
+  }
   if (currentAccessToken && Date.now() < tokenExpiresAt) {
     return currentAccessToken;
   }
@@ -56,6 +60,15 @@ export async function initGoogleAuth(
         return;
       }
 
+      const grantedScopes = response.scope || '';
+      localStorage.setItem('cue_granted_scopes', grantedScopes);
+
+      if (!grantedScopes.includes('devstorage') && !grantedScopes.includes('cloud-platform')) {
+        alert(
+          '⚠️ Google Cloud Storage 접근 권한이 체크되지 않았습니다.\n\n구글 로그인 창에서 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 체크박스를 반드시 체크해 주셔야 GCS 버킷 동기화가 가능합니다.\n\n로그아웃 후 다시 로그인하여 권한을 체크해 주세요.'
+        );
+      }
+
       currentAccessToken = response.access_token;
       // Expires in response.expires_in seconds (default 3600s)
       const expiresIn = response.expires_in || 3600;
@@ -94,6 +107,7 @@ export function googleLogout(): void {
   localStorage.removeItem('cue_access_token');
   localStorage.removeItem('cue_token_expires');
   localStorage.removeItem('cue_user_profile');
+  localStorage.removeItem('cue_granted_scopes');
 }
 
 export function getStoredUserProfile(): UserProfile | undefined {
