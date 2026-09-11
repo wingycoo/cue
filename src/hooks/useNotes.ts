@@ -182,7 +182,7 @@ export function useNotes() {
       alert('Google Client ID를 설정 페이지에서 먼저 입력해 주세요.');
       return;
     }
-    requestGoogleLogin();
+    requestGoogleLogin(false);
   };
 
   const handleLogout = () => {
@@ -197,7 +197,7 @@ export function useNotes() {
     setErrorModalInfo(null);
     setTimeout(() => {
       try {
-        requestGoogleLogin();
+        requestGoogleLogin(true);
       } catch (e) {
         console.error(e);
       }
@@ -205,6 +205,11 @@ export function useNotes() {
   };
 
   const createNewNote = async () => {
+    if (!accessToken) {
+      handleLogin();
+      return;
+    }
+
     const newNote: Note = {
       id: `note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       title: '',

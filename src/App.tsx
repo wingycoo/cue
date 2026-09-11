@@ -86,6 +86,8 @@ export function App() {
           notes={notes}
           selectedNoteId={selectedNoteId}
           searchQuery={searchQuery}
+          isLoggedIn={!!accessToken}
+          onLogin={handleLogin}
           onSearchChange={setSearchQuery}
           onSelectNote={handleSelectNote}
           onCreateNote={handleCreateNote}
@@ -95,6 +97,8 @@ export function App() {
 
         <Editor
           note={selectedNote}
+          isLoggedIn={!!accessToken}
+          onLogin={handleLogin}
           onUpdateNote={updateNote}
           onDeleteNote={deleteNote}
           onTogglePin={togglePin}

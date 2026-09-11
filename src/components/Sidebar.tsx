@@ -1,11 +1,13 @@
 import React from 'react';
-import { Plus, Search, Pin, Trash2, FileText } from 'lucide-react';
+import { Plus, Search, Pin, Trash2, FileText, Lock, LogIn } from 'lucide-react';
 import type { Note } from '../types';
 
 interface SidebarProps {
   notes: Note[];
   selectedNoteId: string | null;
   searchQuery: string;
+  isLoggedIn: boolean;
+  onLogin: () => void;
   onSearchChange: (q: string) => void;
   onSelectNote: (id: string) => void;
   onCreateNote: () => void;
@@ -17,6 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   notes,
   selectedNoteId,
   searchQuery,
+  isLoggedIn,
+  onLogin,
   onSearchChange,
   onSelectNote,
   onCreateNote,
@@ -41,13 +45,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return tmp.textContent || tmp.innerText || '';
   };
 
+  const handleCreateClick = () => {
+    if (!isLoggedIn) {
+      onLogin();
+    } else {
+      onCreateNote();
+    }
+  };
+
   const renderCard = (note: Note) => {
     const isActive = note.id === selectedNoteId;
     const plainText = stripHtml(note.content).trim();
-    
+
     // First line or snippet as main card title
     const firstLine = plainText.split('\n')[0] || '';
-    const displayTitle = firstLine ? (firstLine.length > 28 ? firstLine.substring(0, 28) + '...' : firstLine) : '새 업무 노트';
+    const displayTitle = firstLine
+      ? firstLine.length > 28
+        ? firstLine.substring(0, 28) + '...'
+        : firstLine
+      : '새 업무 노트';
     const snippetText = plainText ? plainText : '작성된 내용이 없습니다.';
 
     return (
@@ -89,9 +105,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="app-sidebar">
       <div className="sidebar-header">
-        <button type="button" className="glass-btn btn-primary w-full justify-center" onClick={onCreateNote}>
-          <Plus size={18} />
-          <span>새 노트 작성</span>
+        <button
+          type="button"
+          className="glass-btn btn-primary w-full justify-center"
+          onClick={handleCreateClick}
+          title={isLoggedIn ? '새 노트 작성' : '구글 로그인 후 새 노트 작성'}
+        >
+          {isLoggedIn ? <Plus size={18} /> : <LogIn size={18} />}
+          <span>{isLoggedIn ? '새 노트 작성' : '로그인 후 작성하기'}</span>
         </button>
 
         <div className="relative">
@@ -107,13 +128,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
         </div>
+
+        {!isLoggedIn && (
+          <div
+            className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-300 flex items-center justify-between cursor-pointer hover:bg-indigo-500/20 transition"
+            onClick={onLogin}
+            title="클릭하여 구글 로그인"
+          >
+            <span className="flex items-center gap-1.5 font-medium">
+              <Lock size={13} />
+              <span>로그인 후 작성/동기화 가능</span>
+            </span>
+            <LogIn size={14} className="shrink-0 text-indigo-400" />
+          </div>
+        )}
       </div>
 
       <div className="note-list-scroll">
         {notes.length === 0 ? (
           <div className="empty-state py-12">
             <FileText size={32} className="opacity-40" />
-            <p className="text-sm">노트가 없습니다.<br />새 노트를 추가해보세요!</p>
+            <p className="text-sm">
+              {isLoggedIn ? (
+                <>
+                  노트가 없습니다.
+                  <br />새 노트를 추가해보세요!
+                </>
+              ) : (
+                <>
+                  로그인 후 노트를 작성하고
+                  <br />GCS에 안전하게 동기화하세요.
+                </>
+              )}
+            </p>
           </div>
         ) : (
           <>

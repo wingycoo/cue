@@ -100,11 +100,11 @@ export async function initGoogleAuth(
   });
 }
 
-export function requestGoogleLogin(): void {
+export function requestGoogleLogin(forceConsent = false): void {
   if (!tokenClient) {
     throw new Error('Google OAuth client not initialized. Please set Google Client ID in settings.');
   }
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+  tokenClient.requestAccessToken(forceConsent ? { prompt: 'consent' } : { prompt: '' });
 }
 
 export function googleLogout(): void {

@@ -20,11 +20,15 @@ import {
   ChevronLeft,
   Copy,
   Check,
+  Lock,
+  LogIn,
 } from 'lucide-react';
 import type { Note } from '../types';
 
 interface EditorProps {
   note: Note | null;
+  isLoggedIn: boolean;
+  onLogin: () => void;
   onUpdateNote: (fields: Partial<Note> & { id: string }) => void;
   onDeleteNote: (id: string) => void;
   onTogglePin: (id: string) => void;
@@ -34,6 +38,8 @@ interface EditorProps {
 
 export const Editor: React.FC<EditorProps> = ({
   note,
+  isLoggedIn,
+  onLogin,
   onUpdateNote,
   onDeleteNote,
   onTogglePin,
@@ -44,6 +50,7 @@ export const Editor: React.FC<EditorProps> = ({
   const [copied, setCopied] = useState(false);
 
   const editor = useEditor({
+    editable: isLoggedIn,
     extensions: [
       StarterKit,
       Image.configure({
@@ -51,12 +58,14 @@ export const Editor: React.FC<EditorProps> = ({
         allowBase64: true,
       }),
       Placeholder.configure({
-        placeholder: '이곳에 자유롭게 업무 노트를 작성하세요... (이미지를 끌어다 놓거나 붙여넣으실 수 있습니다)',
+        placeholder: isLoggedIn
+          ? '이곳에 자유롭게 업무 노트를 작성하세요... (이미지를 끌어다 놓거나 붙여넣으실 수 있습니다)'
+          : 'Google 계정으로 로그인 후 편집할 수 있습니다.',
       }),
     ],
     content: note?.content || '',
     onUpdate: ({ editor }) => {
-      if (note) {
+      if (note && isLoggedIn) {
         onUpdateNote({
           id: note.id,
           content: editor.getHTML(),
@@ -65,22 +74,26 @@ export const Editor: React.FC<EditorProps> = ({
     },
     editorProps: {
       handleDrop: (view, event, _slice, moved) => {
+        if (!isLoggedIn) return false;
         if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
           const file = event.dataTransfer.files[0];
           if (file.type.startsWith('image/')) {
             event.preventDefault();
-            onUploadImage(file).then((url) => {
-              const { schema } = view.state;
-              const node = schema.nodes.image.create({ src: url });
-              const transaction = view.state.tr.insert(view.state.selection.from, node);
-              view.dispatch(transaction);
-            }).catch(console.error);
+            onUploadImage(file)
+              .then((url) => {
+                const { schema } = view.state;
+                const node = schema.nodes.image.create({ src: url });
+                const transaction = view.state.tr.insert(view.state.selection.from, node);
+                view.dispatch(transaction);
+              })
+              .catch(console.error);
             return true;
           }
         }
         return false;
       },
       handlePaste: (view, event) => {
+        if (!isLoggedIn) return false;
         const items = event.clipboardData?.items;
         if (items) {
           for (let i = 0; i < items.length; i++) {
@@ -89,12 +102,14 @@ export const Editor: React.FC<EditorProps> = ({
               const file = item.getAsFile();
               if (file) {
                 event.preventDefault();
-                onUploadImage(file).then((url) => {
-                  const { schema } = view.state;
-                  const node = schema.nodes.image.create({ src: url });
-                  const transaction = view.state.tr.insert(view.state.selection.from, node);
-                  view.dispatch(transaction);
-                }).catch(console.error);
+                onUploadImage(file)
+                  .then((url) => {
+                    const { schema } = view.state;
+                    const node = schema.nodes.image.create({ src: url });
+                    const transaction = view.state.tr.insert(view.state.selection.from, node);
+                    view.dispatch(transaction);
+                  })
+                  .catch(console.error);
                 return true;
               }
             }
@@ -105,6 +120,13 @@ export const Editor: React.FC<EditorProps> = ({
     },
   });
 
+  // Keep editable in sync
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(isLoggedIn);
+    }
+  }, [editor, isLoggedIn]);
+
   // Keep editor content in sync when selected note changes
   useEffect(() => {
     if (editor && note) {
@@ -114,6 +136,32 @@ export const Editor: React.FC<EditorProps> = ({
     }
   }, [note?.id, editor]);
 
+  // 1. Not logged in AND no note selected: Show Login Required Landing Card
+  if (!isLoggedIn && !note) {
+    return (
+      <div className="editor-workspace empty-state">
+        <div className="p-8 rounded-3xl bg-indigo-500/10 border border-indigo-500/25 max-w-md mx-4 text-center shadow-2xl backdrop-blur-xl">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 mx-auto mb-4 flex items-center justify-center shadow-lg shadow-indigo-500/15">
+            <Lock size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Google 로그인 후 작성 가능</h2>
+          <p className="text-sm text-slate-300 mb-6 leading-relaxed">
+            동기화 오류를 방지하고 안전한 GCS 클라우드 실시간 저장을 위해 Google 로그인 후 노트를 작성하실 수 있습니다.
+          </p>
+          <button
+            type="button"
+            className="glass-btn btn-primary w-full justify-center py-3 text-base shadow-lg"
+            onClick={onLogin}
+          >
+            <LogIn size={18} />
+            <span>Google 계정으로 로그인</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Logged in AND no note selected: Show Empty Selection Prompt
   if (!note) {
     return (
       <div className="editor-workspace empty-state">
@@ -135,6 +183,10 @@ export const Editor: React.FC<EditorProps> = ({
   }
 
   const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isLoggedIn) {
+      onLogin();
+      return;
+    }
     if (e.target.files && e.target.files[0] && editor) {
       const file = e.target.files[0];
       try {
@@ -183,6 +235,24 @@ export const Editor: React.FC<EditorProps> = ({
 
   return (
     <div className="editor-workspace">
+      {/* Read-only login banner if viewing note without login */}
+      {!isLoggedIn && (
+        <div className="p-3 mx-4 mt-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 font-medium">
+            <Lock size={13} className="shrink-0" />
+            <span>읽기 전용 모드입니다. 노트를 편집하거나 새로 작성하려면 Google 로그인이 필요합니다.</span>
+          </span>
+          <button
+            type="button"
+            className="glass-btn btn-primary text-xs py-1 px-3 ml-2 shrink-0"
+            onClick={onLogin}
+          >
+            <LogIn size={13} />
+            <span>로그인하기</span>
+          </button>
+        </div>
+      )}
+
       {/* Editor Header: Back Button + Date Info + Actions */}
       <div className="editor-header">
         <div className="editor-header-left">
@@ -232,8 +302,8 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
       </div>
 
-      {/* Toolbar */}
-      {editor && (
+      {/* Toolbar (Only shown when logged in) */}
+      {isLoggedIn && editor && (
         <div className="editor-toolbar">
           <button
             type="button"
