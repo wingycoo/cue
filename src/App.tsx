@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
 import { SettingsModal } from './components/SettingsModal';
 import { GuideModal } from './components/GuideModal';
+import { ErrorModal } from './components/ErrorModal';
 
 export function App() {
   const {
@@ -24,10 +25,13 @@ export function App() {
     accessToken,
     handleLogin,
     handleLogout,
+    handleRelogin,
     syncStatus,
     performSync,
     searchQuery,
     setSearchQuery,
+    errorModalInfo,
+    setErrorModalInfo,
   } = useNotes();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -64,6 +68,17 @@ export function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenGuide={() => setIsGuideOpen(true)}
         onSyncNow={() => performSync()}
+        onOpenErrorModal={() => {
+          if (syncStatus.errorMessage) {
+            setErrorModalInfo({
+              title: '동기화 오류 상세',
+              message: syncStatus.errorMessage,
+              isPermissionError:
+                syncStatus.errorMessage.includes('403') ||
+                syncStatus.errorMessage.includes('권한'),
+            });
+          }
+        }}
       />
 
       <div className={`app-container mobile-view-${mobileView}`}>
@@ -98,6 +113,19 @@ export function App() {
       <GuideModal
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
+      />
+
+      <ErrorModal
+        isOpen={!!errorModalInfo}
+        title={errorModalInfo?.title || ''}
+        message={errorModalInfo?.message || ''}
+        isPermissionError={errorModalInfo?.isPermissionError ?? true}
+        onClose={() => setErrorModalInfo(null)}
+        onRelogin={handleRelogin}
+        onLogout={() => {
+          handleLogout();
+          setErrorModalInfo(null);
+        }}
       />
     </div>
   );

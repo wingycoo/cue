@@ -29,3 +29,9 @@ export interface SyncStatus {
   lastSyncedAt?: number;
   errorMessage?: string;
 }
+
+export interface ErrorModalInfo {
+  title: string;
+  message: string;
+  isPermissionError?: boolean;
+}

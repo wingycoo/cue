@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Note, AppSettings, UserProfile, SyncStatus } from '../types';
+import type { Note, AppSettings, UserProfile, SyncStatus, ErrorModalInfo } from '../types';
 import {
   getAllLocalNotes,
   saveLocalNote,
@@ -36,6 +36,7 @@ export function useNotes() {
   const [accessToken, setAccessToken] = useState<string | null>(getStoredAccessToken());
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorModalInfo, setErrorModalInfo] = useState<ErrorModalInfo | null>(null);
 
   // Debounce timers ref for unthrottled GCS uploads
   const uploadTimers = useRef<{ [noteId: string]: number }>({});
@@ -68,12 +69,30 @@ export function useNotes() {
         (token, user) => {
           setAccessToken(token);
           if (user) setUserProfile(user);
+          setErrorModalInfo(null);
         },
-        (_err) => {
-          setSyncStatus({
-            state: 'error',
-            errorMessage: 'Google 로그인 또는 권한 오류',
-          });
+        (err) => {
+          if (err?.type === 'SCOPE_MISSING') {
+            setErrorModalInfo({
+              title: 'Google Cloud Storage 권한 필요',
+              message: err.message,
+              isPermissionError: true,
+            });
+            setSyncStatus({
+              state: 'error',
+              errorMessage: 'GCS 권한 미부여',
+            });
+          } else {
+            setErrorModalInfo({
+              title: 'Google 로그인 오류',
+              message: err?.message || 'Google 로그인 중 오류가 발생했습니다.',
+              isPermissionError: false,
+            });
+            setSyncStatus({
+              state: 'error',
+              errorMessage: 'Google 로그인 오류',
+            });
+          }
         }
       ).catch(console.error);
     }
@@ -127,10 +146,24 @@ export function useNotes() {
         setSyncStatus({ state: 'synced', lastSyncedAt: Date.now() });
       } catch (err: any) {
         console.error('Sync Error:', err);
+        const rawMsg = err?.message || 'GCS 동기화 실패';
+        const isPerm =
+          rawMsg.includes('403') ||
+          rawMsg.includes('Insufficient Permission') ||
+          rawMsg.includes('insufficientPermissions');
+
         setSyncStatus({
           state: 'error',
-          errorMessage: err?.message || 'GCS 동기화 실패',
+          errorMessage: isPerm ? 'GCS 권한 부족 (403)' : rawMsg,
         });
+
+        if (isPerm) {
+          setErrorModalInfo({
+            title: 'Google Cloud Storage 권한 오류 (403)',
+            message: `Google Cloud Storage 버킷(${settings.gcsBucket})에 접근할 수 있는 권한이 부족합니다.\n\n구글 로그인 시 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 권한 체크박스를 선택했는지, 또는 GCP 콘솔에서 해당 계정에 버킷 권한(스토리지 객체 관리자)이 부여되어 있는지 확인해 주세요.`,
+            isPermissionError: true,
+          });
+        }
       }
     },
     [accessToken, settings.gcsBucket]
@@ -157,6 +190,18 @@ export function useNotes() {
     setAccessToken(null);
     setUserProfile(undefined);
     setSyncStatus({ state: 'idle' });
+  };
+
+  const handleRelogin = () => {
+    handleLogout();
+    setErrorModalInfo(null);
+    setTimeout(() => {
+      try {
+        requestGoogleLogin();
+      } catch (e) {
+        console.error(e);
+      }
+    }, 150);
   };
 
   const createNewNote = async () => {
@@ -211,7 +256,22 @@ export function useNotes() {
               })
               .catch((err) => {
                 console.error('GCS Upload Error:', err);
-                setSyncStatus({ state: 'error', errorMessage: 'GCS 저장 오류' });
+                const rawMsg = err?.message || '';
+                const isPerm =
+                  rawMsg.includes('403') ||
+                  rawMsg.includes('Insufficient Permission') ||
+                  rawMsg.includes('insufficientPermissions');
+                setSyncStatus({
+                  state: 'error',
+                  errorMessage: isPerm ? 'GCS 권한 부족 (403)' : 'GCS 저장 오류',
+                });
+                if (isPerm) {
+                  setErrorModalInfo({
+                    title: 'Google Cloud Storage 권한 오류 (403)',
+                    message: `노트를 GCS 버킷(${settings.gcsBucket})에 저장할 수 없습니다.\n\n구글 로그인 시 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 권한 체크박스를 선택했는지 확인해 주세요.`,
+                    isPermissionError: true,
+                  });
+                }
               });
           };
 
@@ -290,9 +350,12 @@ export function useNotes() {
     accessToken,
     handleLogin,
     handleLogout,
+    handleRelogin,
     syncStatus,
     performSync,
     searchQuery,
     setSearchQuery,
+    errorModalInfo,
+    setErrorModalInfo,
   };
 }

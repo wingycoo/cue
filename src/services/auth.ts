@@ -64,9 +64,18 @@ export async function initGoogleAuth(
       localStorage.setItem('cue_granted_scopes', grantedScopes);
 
       if (!grantedScopes.includes('devstorage') && !grantedScopes.includes('cloud-platform')) {
-        alert(
-          '⚠️ Google Cloud Storage 접근 권한이 체크되지 않았습니다.\n\n구글 로그인 창에서 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 체크박스를 반드시 체크해 주셔야 GCS 버킷 동기화가 가능합니다.\n\n로그아웃 후 다시 로그인하여 권한을 체크해 주세요.'
-        );
+        currentAccessToken = null;
+        tokenExpiresAt = 0;
+        localStorage.removeItem('cue_access_token');
+        localStorage.removeItem('cue_token_expires');
+        if (onError) {
+          onError({
+            type: 'SCOPE_MISSING',
+            message:
+              'Google Cloud Storage 접근 권한이 선택되지 않았습니다.\n구글 로그인 화면에서 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 권한 체크박스를 반드시 체크해 주세요.',
+          });
+        }
+        return;
       }
 
       currentAccessToken = response.access_token;

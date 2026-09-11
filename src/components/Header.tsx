@@ -23,6 +23,7 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenGuide: () => void;
   onSyncNow: () => void;
+  onOpenErrorModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenGuide,
   onSyncNow,
+  onOpenErrorModal,
 }) => {
   const handleBadgeClick = async () => {
     const granted = await requestNotificationPermission();
@@ -93,8 +95,14 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Sync status pill */}
         <div
           className="status-pill cursor-pointer hover:opacity-80 transition"
-          onClick={onSyncNow}
-          title="클릭하여 GCS와 수동 동기화"
+          onClick={() => {
+            if (syncStatus.state === 'error' && onOpenErrorModal) {
+              onOpenErrorModal();
+            } else {
+              onSyncNow();
+            }
+          }}
+          title={syncStatus.state === 'error' ? '클릭하여 오류 상세 및 해결 방법 확인' : '클릭하여 GCS와 수동 동기화'}
         >
           {getSyncIcon()}
           <span className="btn-label-desktop">{getSyncText()}</span>
