@@ -8,6 +8,7 @@ import {
   saveAppSettings as saveDbSettings,
 } from '../services/db';
 import { updateAppBadge } from '../services/badge';
+import { updateNativeWidget } from '../services/widget';
 import {
   getStoredAccessToken,
   getStoredUserProfile,
@@ -57,10 +58,12 @@ export function useNotes() {
     })();
   }, []);
 
-  // Update badge whenever notes list changes
+  // Update badge & widget whenever notes list changes
   useEffect(() => {
     updateAppBadge(notes.length);
-  }, [notes.length]);
+    const topNote = notes.find((n) => n.pinned) || notes[0] || null;
+    updateNativeWidget(topNote);
+  }, [notes]);
 
   // 2. Initialize Google Auth Client
   useEffect(() => {

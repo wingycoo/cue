@@ -6,6 +6,7 @@ import { Editor } from './components/Editor';
 import { SettingsModal } from './components/SettingsModal';
 import { GuideModal } from './components/GuideModal';
 import { ErrorModal } from './components/ErrorModal';
+import { initWidgetActionListeners } from './services/widget';
 
 export function App() {
   const {
@@ -55,6 +56,18 @@ export function App() {
       setMobileView('list');
     }
   }, [selectedNote, mobileView]);
+
+  // Listen for native widget interactions (e.g. "+ 새 노트" quick add or card tap)
+  useEffect(() => {
+    return initWidgetActionListeners(
+      () => {
+        handleCreateNote();
+      },
+      (noteId) => {
+        handleSelectNote(noteId);
+      }
+    );
+  }, []);
 
   return (
     <div className="app-shell">
