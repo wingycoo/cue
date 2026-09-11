@@ -108,9 +108,6 @@ export function requestGoogleLogin(forceConsent = false): void {
 }
 
 export function googleLogout(): void {
-  if (currentAccessToken && window.google?.accounts?.oauth2) {
-    window.google.accounts.oauth2.revoke(currentAccessToken);
-  }
   currentAccessToken = null;
   tokenExpiresAt = 0;
   localStorage.removeItem('cue_access_token');
