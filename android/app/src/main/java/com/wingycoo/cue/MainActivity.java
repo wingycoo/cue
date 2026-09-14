@@ -10,6 +10,15 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(CueWidgetPlugin.class);
         super.onCreate(savedInstanceState);
+
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            String userAgent = getBridge().getWebView().getSettings().getUserAgentString();
+            if (userAgent != null) {
+                userAgent = userAgent.replace("; wv", "").replace("Version/4.0 ", "");
+                getBridge().getWebView().getSettings().setUserAgentString(userAgent);
+            }
+        }
+
         CueWidgetProvider.updateAllWidgets(this);
         handleWidgetIntent(getIntent());
     }

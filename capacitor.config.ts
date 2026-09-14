@@ -7,6 +7,12 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://wingycoo.github.io/cue/',
     cleartext: false,
+    allowNavigation: [
+      'accounts.google.com',
+      '*.google.com',
+      '*.googleapis.com',
+      '*.gstatic.com',
+    ],
   },
   android: {
     backgroundColor: '#0b0f19',

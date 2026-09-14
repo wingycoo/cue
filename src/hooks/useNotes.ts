@@ -192,7 +192,7 @@ export function useNotes() {
       alert('Google Client ID를 설정 페이지에서 먼저 입력해 주세요.');
       return;
     }
-    requestGoogleLogin(false);
+    requestGoogleLogin(false, settings.googleClientId);
   };
 
   const handleLogout = () => {
@@ -207,7 +207,7 @@ export function useNotes() {
     setErrorModalInfo(null);
     setTimeout(() => {
       try {
-        requestGoogleLogin(true);
+        requestGoogleLogin(true, settings.googleClientId);
       } catch (e) {
         console.error(e);
       }
