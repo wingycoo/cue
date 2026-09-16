@@ -13,15 +13,32 @@ export interface Note {
 
 export interface AppSettings {
   gcsBucket: string;
-  googleClientId: string;
+  googleClientId?: string;
   autoSync: boolean;
+  allowedUsernames?: string[];
 }
 
 export interface UserProfile {
   id: string;
   name: string;
-  email: string;
-  picture: string;
+  email?: string;
+  picture?: string;
+}
+
+export interface UserAccount {
+  id: string;
+  username: string;
+  name: string;
+  passwordHash: string;
+  salt: string;
+  createdAt: number;
+}
+
+export interface AuthSession {
+  user: UserProfile;
+  token: string;
+  loggedInAt: number;
+  rememberMe: boolean;
 }
 
 export interface SyncStatus {

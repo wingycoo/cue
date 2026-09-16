@@ -132,24 +132,36 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* User Auth Profile / Login Button */}
         {accessToken && userProfile ? (
-          <div className="user-profile-section">
-            <img
-              src={userProfile.picture}
-              alt={userProfile.name}
-              className="user-avatar"
-              title={userProfile.email}
-            />
+          <div className="user-profile-section flex items-center gap-2">
+            {userProfile.picture ? (
+              <img
+                src={userProfile.picture}
+                alt={userProfile.name}
+                className="user-avatar"
+                title={userProfile.name}
+              />
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow shrink-0"
+                title={userProfile.name}
+              >
+                {userProfile.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="btn-label-desktop text-xs text-slate-300 font-medium max-w-[100px] truncate">
+              {userProfile.name}
+            </span>
             <button
               type="button"
-              className="glass-btn logout-btn"
+              className="glass-btn logout-btn shrink-0"
               onClick={onLogout}
-              title="구글 로그아웃"
+              title="로그아웃"
             >
               <LogOut size={14} />
             </button>
           </div>
         ) : (
-          <button className="glass-btn btn-primary" onClick={onLogin} title="구글 로그인">
+          <button className="glass-btn btn-primary" onClick={onLogin} title="로그인">
             <LogIn size={15} />
             <span className="btn-label-desktop">로그인</span>
           </button>

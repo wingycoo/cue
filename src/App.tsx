@@ -6,6 +6,7 @@ import { Editor } from './components/Editor';
 import { SettingsModal } from './components/SettingsModal';
 import { GuideModal } from './components/GuideModal';
 import { ErrorModal } from './components/ErrorModal';
+import { AuthModal } from './components/AuthModal';
 import { initWidgetActionListeners } from './services/widget';
 
 export function App() {
@@ -33,6 +34,9 @@ export function App() {
     setSearchQuery,
     errorModalInfo,
     setErrorModalInfo,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    handleAuthSuccess,
   } = useNotes();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -119,6 +123,12 @@ export function App() {
           onBackToList={() => setMobileView('list')}
         />
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
 
       <SettingsModal
         isOpen={isSettingsOpen}

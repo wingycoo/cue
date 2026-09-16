@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Note, AppSettings, UserProfile, SyncStatus, ErrorModalInfo } from '../types';
+import type { Note, AppSettings, UserProfile, SyncStatus, ErrorModalInfo, AuthSession } from '../types';
 import {
   getAllLocalNotes,
   saveLocalNote,
@@ -10,11 +10,8 @@ import {
 import { updateAppBadge } from '../services/badge';
 import { updateNativeWidget } from '../services/widget';
 import {
-  getStoredAccessToken,
-  getStoredUserProfile,
-  initGoogleAuth,
-  googleLogout,
-  requestGoogleLogin,
+  getStoredSession,
+  logoutUser,
 } from '../services/auth';
 import {
   uploadNoteToGCS,
@@ -28,14 +25,19 @@ export function useNotes() {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings>({
     gcsBucket: 'wingycoo-cue',
-    googleClientId: '387585564320-gadbr3nss1o91p9lrmjrnppqimrc6rje.apps.googleusercontent.com',
     autoSync: true,
   });
-  const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
-    getStoredUserProfile()
-  );
-  const [accessToken, setAccessToken] = useState<string | null>(getStoredAccessToken());
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
+
+  // Authentication State with Auto-Login from Local Storage
+  const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const userProfile: UserProfile | undefined = session?.user;
+  const accessToken: string | null = session ? session.token : null;
+
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    state: session ? 'synced' : 'idle',
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [errorModalInfo, setErrorModalInfo] = useState<ErrorModalInfo | null>(null);
 
@@ -50,8 +52,9 @@ export function useNotes() {
 
       const localNotes = await getAllLocalNotes();
       setNotes(localNotes);
-      const isAuth = getStoredAccessToken() !== null;
-      if (localNotes.length > 0 && !selectedNoteId && isAuth) {
+
+      const hasAuth = getStoredSession() !== null;
+      if (localNotes.length > 0 && !selectedNoteId && hasAuth) {
         setSelectedNoteId(localNotes[0].id);
       }
       updateAppBadge(localNotes.length);
@@ -65,55 +68,12 @@ export function useNotes() {
     updateNativeWidget(topNote);
   }, [notes]);
 
-  // 2. Initialize Google Auth Client
-  useEffect(() => {
-    if (settings.googleClientId) {
-      initGoogleAuth(
-        settings.googleClientId,
-        (token, user) => {
-          setAccessToken(token);
-          if (user) setUserProfile(user);
-          setErrorModalInfo(null);
-          setNotes((currentNotes) => {
-            if (currentNotes.length > 0 && !selectedNoteId) {
-              setSelectedNoteId(currentNotes[0].id);
-            }
-            return currentNotes;
-          });
-        },
-        (err) => {
-          if (err?.type === 'SCOPE_MISSING') {
-            setErrorModalInfo({
-              title: 'Google Cloud Storage 권한 필요',
-              message: err.message,
-              isPermissionError: true,
-            });
-            setSyncStatus({
-              state: 'error',
-              errorMessage: 'GCS 권한 미부여',
-            });
-          } else {
-            setErrorModalInfo({
-              title: 'Google 로그인 오류',
-              message: err?.message || 'Google 로그인 중 오류가 발생했습니다.',
-              isPermissionError: false,
-            });
-            setSyncStatus({
-              state: 'error',
-              errorMessage: 'Google 로그인 오류',
-            });
-          }
-        }
-      ).catch(console.error);
-    }
-  }, [settings.googleClientId]);
-
-  // 3. Full GCS Sync Engine
+  // 2. Full GCS Sync Engine (if valid external token is available)
   const performSync = useCallback(
     async (tokenToUse?: string) => {
       const token = tokenToUse || accessToken;
-      if (!token || !settings.gcsBucket) {
-        setSyncStatus({ state: 'offline', errorMessage: 'GCS 설정 필요' });
+      if (!token || !settings.gcsBucket || token.startsWith('cue_session_')) {
+        setSyncStatus({ state: 'synced' });
         return;
       }
 
@@ -148,70 +108,54 @@ export function useNotes() {
           }
         }
 
-        const updatedList: Note[] = Array.from(processMap.values());
-        updatedList.sort((a, b) => b.updatedAt - a.updatedAt);
-        setNotes(updatedList);
-        updateAppBadge(updatedList.length);
+        // Upload any local-only notes
+        for (const localNote of currentLocal) {
+          const remoteFound = remoteNotes.find((rn) => rn.id === localNote.id);
+          if (!remoteFound && !localNote.isDeleted) {
+            await uploadNoteToGCS(bucket, token, localNote);
+          }
+        }
 
+        const freshLocal = await getAllLocalNotes();
+        setNotes(freshLocal);
         setSyncStatus({ state: 'synced', lastSyncedAt: Date.now() });
       } catch (err: any) {
-        console.error('Sync Error:', err);
-        const rawMsg = err?.message || 'GCS 동기화 실패';
-        const isPerm =
-          rawMsg.includes('403') ||
-          rawMsg.includes('Insufficient Permission') ||
-          rawMsg.includes('insufficientPermissions');
-
+        console.error('GCS Sync Error:', err);
         setSyncStatus({
           state: 'error',
-          errorMessage: isPerm ? 'GCS 권한 부족 (403)' : rawMsg,
+          errorMessage: err?.message || '동기화 중 오류 발생',
         });
-
-        if (isPerm) {
-          setErrorModalInfo({
-            title: 'Google Cloud Storage 권한 오류 (403)',
-            message: `Google Cloud Storage 버킷(${settings.gcsBucket})에 접근할 수 있는 권한이 부족합니다.\n\n구글 로그인 시 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 권한 체크박스를 선택했는지, 또는 GCP 콘솔에서 해당 계정에 버킷 권한(스토리지 객체 관리자)이 부여되어 있는지 확인해 주세요.`,
-            isPermissionError: true,
-          });
-        }
       }
     },
     [accessToken, settings.gcsBucket]
   );
 
-  // Auto Sync trigger on initial login
-  useEffect(() => {
-    if (accessToken && settings.gcsBucket) {
-      performSync();
-    }
-  }, [accessToken, settings.gcsBucket, performSync]);
-
   // Actions
   const handleLogin = () => {
-    if (!settings.googleClientId) {
-      alert('Google Client ID를 설정 페이지에서 먼저 입력해 주세요.');
-      return;
-    }
-    requestGoogleLogin(false, settings.googleClientId);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (newSession: AuthSession) => {
+    setSession(newSession);
+    setSyncStatus({ state: 'synced' });
+    setNotes((currentNotes) => {
+      if (currentNotes.length > 0 && !selectedNoteId) {
+        setSelectedNoteId(currentNotes[0].id);
+      }
+      return currentNotes;
+    });
   };
 
   const handleLogout = () => {
-    googleLogout();
-    setAccessToken(null);
-    setUserProfile(undefined);
+    logoutUser();
+    setSession(null);
     setSyncStatus({ state: 'idle' });
   };
 
   const handleRelogin = () => {
     handleLogout();
     setErrorModalInfo(null);
-    setTimeout(() => {
-      try {
-        requestGoogleLogin(true, settings.googleClientId);
-      } catch (e) {
-        console.error(e);
-      }
-    }, 150);
+    setIsAuthModalOpen(true);
   };
 
   const createNewNote = async () => {
@@ -234,13 +178,13 @@ export function useNotes() {
     setNotes((prev) => [newNote, ...prev]);
     setSelectedNoteId(newNote.id);
 
-    if (accessToken && settings.gcsBucket) {
+    if (accessToken && settings.gcsBucket && !accessToken.startsWith('cue_session_')) {
       uploadNoteToGCS(settings.gcsBucket, accessToken, newNote).catch(console.error);
     }
   };
 
   /**
-   * Debounced note updater (Updates local state & IndexedDB immediately, delays GCS network upload)
+   * Debounced note updater (Updates local state & IndexedDB immediately, delays GCS network upload if configured)
    */
   const updateNote = useCallback(
     (updatedFields: Partial<Note> & { id: string }, immediateGCS = false) => {
@@ -257,8 +201,8 @@ export function useNotes() {
         // 1. Instant local IndexedDB save (non-blocking)
         saveLocalNote(modifiedNote).catch(console.error);
 
-        // 2. Debounced GCS network upload (1.2s delay after last keystroke)
-        if (accessToken && settings.gcsBucket) {
+        // 2. Debounced GCS network upload (if valid external token present)
+        if (accessToken && settings.gcsBucket && !accessToken.startsWith('cue_session_')) {
           if (uploadTimers.current[modifiedNote.id]) {
             window.clearTimeout(uploadTimers.current[modifiedNote.id]);
           }
@@ -271,22 +215,10 @@ export function useNotes() {
               })
               .catch((err) => {
                 console.error('GCS Upload Error:', err);
-                const rawMsg = err?.message || '';
-                const isPerm =
-                  rawMsg.includes('403') ||
-                  rawMsg.includes('Insufficient Permission') ||
-                  rawMsg.includes('insufficientPermissions');
                 setSyncStatus({
                   state: 'error',
-                  errorMessage: isPerm ? 'GCS 권한 부족 (403)' : 'GCS 저장 오류',
+                  errorMessage: 'GCS 저장 오류',
                 });
-                if (isPerm) {
-                  setErrorModalInfo({
-                    title: 'Google Cloud Storage 권한 오류 (403)',
-                    message: `노트를 GCS 버킷(${settings.gcsBucket})에 저장할 수 없습니다.\n\n구글 로그인 시 "Google Cloud Storage 데이터 확인, 수정, 구성 및 삭제" 권한 체크박스를 선택했는지 확인해 주세요.`,
-                    isPermissionError: true,
-                  });
-                }
               });
           };
 
@@ -314,7 +246,7 @@ export function useNotes() {
       setSelectedNoteId(null);
     }
 
-    if (accessToken && settings.gcsBucket) {
+    if (accessToken && settings.gcsBucket && !accessToken.startsWith('cue_session_')) {
       deleteNoteFromGCS(settings.gcsBucket, accessToken, id).catch(console.error);
     }
   };
@@ -326,12 +258,19 @@ export function useNotes() {
     }
   };
 
-  const uploadImage = async (file: File | Blob) => {
-    if (!accessToken || !settings.gcsBucket) {
-      return URL.createObjectURL(file);
+  const uploadImage = async (file: File | Blob): Promise<string> => {
+    if (accessToken && settings.gcsBucket && !accessToken.startsWith('cue_session_')) {
+      const res = await uploadImageToGCS(settings.gcsBucket, accessToken, file);
+      return res.publicUrl;
     }
-    const res = await uploadImageToGCS(settings.gcsBucket, accessToken, file);
-    return res.publicUrl;
+
+    // Local-first: convert to Base64 data URL so it persists in IndexedDB across reloads
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
   };
 
   const updateSettings = async (newSettings: AppSettings) => {
@@ -372,5 +311,8 @@ export function useNotes() {
     setSearchQuery,
     errorModalInfo,
     setErrorModalInfo,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    handleAuthSuccess,
   };
 }

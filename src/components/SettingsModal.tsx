@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Save, Database, Key } from 'lucide-react';
+import { X, Save, Database, ShieldCheck } from 'lucide-react';
 import type { AppSettings } from '../types';
+import { getAllowedUsernames, setAllowedUsernames } from '../services/auth';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,16 +17,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
 }) => {
   const [gcsBucket, setGcsBucket] = useState(settings.gcsBucket);
-  const [googleClientId, setGoogleClientId] = useState(settings.googleClientId);
+  const [allowedIds, setAllowedIds] = useState(() =>
+    getAllowedUsernames().join(', ')
+  );
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Save whitelist to auth service
+    const idList = allowedIds
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (idList.length > 0) {
+      setAllowedUsernames(idList);
+    }
+
     onSave({
       ...settings,
       gcsBucket: gcsBucket.trim(),
-      googleClientId: googleClientId.trim(),
+      allowedUsernames: idList,
     });
     onClose();
   };
@@ -36,47 +49,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="modal-header">
           <div className="modal-title">
             <Database size={20} className="text-indigo-400 shrink-0" />
-            <span>GCS & 구글 로그인 설정</span>
+            <span>앱 환경 설정</span>
           </div>
           <button type="button" className="icon-btn shrink-0" onClick={onClose} aria-label="닫기">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="form-group">
             <label className="form-label flex items-center gap-1.5">
-              <Database size={14} className="text-indigo-400" />
-              <span>GCS 버킷 이름 (Google Cloud Storage Bucket)</span>
+              <ShieldCheck size={14} className="text-indigo-400" />
+              <span>가입 허용 아이디 (Whitelist)</span>
             </label>
             <input
               type="text"
               className="glass-input"
-              placeholder="예: my-personal-notes-bucket"
-              value={gcsBucket}
-              onChange={(e) => setGcsBucket(e.target.value)}
+              placeholder="예: wingycoo, admin"
+              value={allowedIds}
+              onChange={(e) => setAllowedIds(e.target.value)}
               required
             />
             <p className="text-xs text-slate-400">
-              노트 JSON 파일 및 첨부 이미지가 직접 저장되는 GCP Storage 버킷 이름입니다.
+              회원가입을 허용할 아이디 목록입니다. 쉼표(,)로 구분하여 입력하세요. (기본: wingycoo)
             </p>
           </div>
 
           <div className="form-group">
             <label className="form-label flex items-center gap-1.5">
-              <Key size={14} className="text-indigo-400" />
-              <span>Google OAuth 2.0 Client ID</span>
+              <Database size={14} className="text-indigo-400" />
+              <span>GCS 버킷 이름 (선택 사항)</span>
             </label>
             <input
               type="text"
               className="glass-input"
-              placeholder="예: 1234567890-xxx.apps.googleusercontent.com"
-              value={googleClientId}
-              onChange={(e) => setGoogleClientId(e.target.value)}
-              required
+              placeholder="예: wingycoo-cue"
+              value={gcsBucket}
+              onChange={(e) => setGcsBucket(e.target.value)}
             />
             <p className="text-xs text-slate-400">
-              GCP Console에서 웹 애플리케이션용으로 발급받은 OAuth 2.0 Client ID입니다.
+              클라우드 백업/동기화에 사용할 GCP Storage 버킷 이름입니다.
             </p>
           </div>
 

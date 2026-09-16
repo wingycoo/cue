@@ -102,5 +102,9 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
   const db = await getDB();
   await db.put('settings', settings, 'app_config');
   localStorage.setItem('cue_gcs_bucket', settings.gcsBucket);
-  localStorage.setItem('cue_google_client_id', settings.googleClientId);
+  if (settings.googleClientId) {
+    localStorage.setItem('cue_google_client_id', settings.googleClientId);
+  } else {
+    localStorage.removeItem('cue_google_client_id');
+  }
 }

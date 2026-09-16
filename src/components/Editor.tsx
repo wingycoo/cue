@@ -144,9 +144,9 @@ export const Editor: React.FC<EditorProps> = ({
           <div className="login-hero-icon">
             <Lock size={30} />
           </div>
-          <h2 className="login-hero-title">Google 로그인 후 시작하기</h2>
+          <h2 className="login-hero-title">로그인 후 시작하기</h2>
           <p className="login-hero-desc">
-            노트가 Google Cloud Storage에 안전하게 보관되고 모든 기기에서 실시간으로 동기화됩니다.
+            아이디와 비밀번호로 로그인하여 노트를 작성하고 안전하게 보관하세요.
           </p>
           <button
             type="button"
@@ -154,12 +154,12 @@ export const Editor: React.FC<EditorProps> = ({
             onClick={onLogin}
           >
             <LogIn size={18} />
-            <span>Google 계정으로 로그인</span>
+            <span>로그인 / 회원가입</span>
           </button>
           <div className="login-hero-badges">
-            <span className="login-badge">☁️ GCS 개인 버킷 저장</span>
-            <span className="login-badge">⚡ 실시간 자동 동기화</span>
-            <span className="login-badge">📱 모바일 PWA 지원</span>
+            <span className="login-badge">🔒 안전한 개인 보관</span>
+            <span className="login-badge">⚡ 앱 실행 시 자동 로그인</span>
+            <span className="login-badge">📱 모바일 & 위젯 지원</span>
           </div>
         </div>
       </div>
@@ -245,7 +245,7 @@ export const Editor: React.FC<EditorProps> = ({
         <div className="auth-notice-bar">
           <div className="auth-notice-text">
             <Lock size={14} className="shrink-0" />
-            <span>읽기 전용 모드입니다. 노트를 편집하려면 Google 로그인이 필요합니다.</span>
+            <span>읽기 전용 모드입니다. 노트를 편집하려면 로그인이 필요합니다.</span>
           </div>
           <button
             type="button"
